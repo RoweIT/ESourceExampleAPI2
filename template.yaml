@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  api-gateway-test
+
+  Sample SAM Template for api-gateway-test
+  
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: api2.esource.roweitdev.co.uk
+    Description: Domain name to call the api from.
+  HostedZoneName:
+    Type: String
+    Default: esource.roweitdev.co.uk.
+    Description: Name of the desired hosted zone.
+  ApiBasePath:
+    Type: String
+    Default: v2
+    Description: Base path of the api. 'v1' - example.co.uk/v1/endpoints
+  SSMCertificateArn:
+    Description: 'Arn of the esource certificate created via terraform.'
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: '/esource/config/ESOURCE_api_certificate_arn'
+
+Resources:
+  GetUsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: app.lambdaHandler
+      Runtime: nodejs10.x
+  
+  ServerlessRestAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+      EndpointConfiguration: REGIONAL
+      DefinitionBody:
+        'Fn::Transform':
+          Name: 'AWS::Include'
+          Parameters:
+            Location: './swagger.yaml'
+
+  GetUsersLambdaPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+    - ServerlessRestAPI
+    - GetUsersFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref GetUsersFunction
+      Principal: apigateway.amazonaws.com
+
+  GatewayDomain:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      RegionalCertificateArn: !Ref SSMCertificateArn
+      DomainName: !Ref DomainName
+      EndpointConfiguration:
+        Types: [REGIONAL]
+
+  APIBasePathMapping:
+    DependsOn: ServerlessRestAPIdevStage #Required - Needs to wait for SAM to create stage before mapping {LOGICAL_API_NAME}{Stage}Stage
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      DomainName: !Ref GatewayDomain
+      RestApiId: !Ref ServerlessRestAPI
+      Stage: dev
+      BasePath: !Ref ApiBasePath
+
+  APIDomain:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: !Ref HostedZoneName
+      RecordSets:
+      - Name: !Ref DomainName
+        Type: A
+        AliasTarget:
+          DNSName: !GetAtt GatewayDomain.RegionalDomainName
+          HostedZoneId: !GetAtt GatewayDomain.RegionalHostedZoneId

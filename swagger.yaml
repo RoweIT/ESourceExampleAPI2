@@ -1,0 +1,61 @@
+swagger: '2.0'
+info:
+  version: '0.1'
+  title: 'ESOURCE Sample Response API #2'
+schemes:
+  - https
+paths:
+  /users:
+    get:
+      description: Gets full list of users
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: The request was successful.
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/User'
+      x-amazon-apigateway-integration:
+        uri: 
+            Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetUsersFunction.Arn}/invocations
+        passthroughBehavior: when_no_match
+        httpMethod: POST
+        type: aws_proxy
+
+  '/users/{id}':
+    get:
+      description: Gets a specific user
+      produces:
+        - application/json
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+      responses:
+        '200':
+          description: The request was successful.
+          schema:
+            items:
+              $ref: '#/definitions/User'
+      x-amazon-apigateway-integration:
+        uri: 
+            Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetUsersFunction.Arn}/invocations
+        passthroughBehavior: when_no_match
+        httpMethod: POST
+        type: aws_proxy
+definitions:
+  User:
+    type: object
+    description: A generic user
+    properties:
+      id:
+        type: number
+        description: ID of the user
+      name:
+        type: string
+        description: Name of the user
+    required:
+      - tip
