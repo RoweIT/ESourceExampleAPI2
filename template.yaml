@@ -111,23 +111,6 @@ Resources:
       FunctionName: !Ref GetUserFunction
       Principal: apigateway.amazonaws.com
 
-  CreateUserFunction:
-    Properties:
-      CodeUri: src/
-      Handler: app.createUser
-      Runtime: nodejs10.x
-    Type: AWS::Serverless::Function
-
-  CreateUserLambdaPermission:
-    Type: AWS::Lambda::Permission
-    DependsOn:
-    - ServerlessRestAPI
-    - CreateUserFunction
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref CreateUserFunction
-      Principal: apigateway.amazonaws.com
-
   ServerlessRestAPI:
     Type: AWS::Serverless::Api
     Properties:
@@ -138,32 +121,12 @@ Resources:
           Name: 'AWS::Include'
           Parameters:
             Location: './openapi3.yaml'
-    
-  GatewayDomain:
-    Type: AWS::ApiGateway::DomainName
-    Properties:
-      RegionalCertificateArn: !Ref SSMCertificateArn
-      DomainName: !Ref DomainName
-      EndpointConfiguration:
-        Types: [REGIONAL]
 
   APIBasePathMapping:
     DependsOn: ServerlessRestAPIdevStage #Required - Needs to wait for SAM to create stage before mapping {LOGICAL_API_NAME}{Stage}Stage
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
-      DomainName: !Ref GatewayDomain
+      DomainName: !Ref DomainName
       RestApiId: !Ref ServerlessRestAPI
       Stage: dev
       BasePath: !Ref ApiBasePath
-
-  APIDomain:
-    Type: AWS::Route53::RecordSetGroup
-    Properties:
-      HostedZoneName: !Ref HostedZoneName
-      RecordSets:
-      - Name: !Ref DomainName
-        Type: A
-        AliasTarget:
-          DNSName: !GetAtt GatewayDomain.RegionalDomainName
-          HostedZoneId: !GetAtt GatewayDomain.RegionalHostedZoneId
-        
