@@ -114,7 +114,7 @@ Resources:
   CreateUserFunction:
     Properties:
       CodeUri: src/
-      Handler: app.getUser
+      Handler: app.createUser
       Runtime: nodejs10.x
     Type: AWS::Serverless::Function
 

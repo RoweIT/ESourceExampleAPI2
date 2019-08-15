@@ -100,11 +100,11 @@ exports.getUser = async (event, context) => {
 exports.createUser = async (event, context) => {
   try {
     console.log('Received event:', JSON.stringify(event, null, 2));
-    let user = event.body;
+    let user = JSON.stringify(event);
 
     return {
       statusCode: 201,
-      body: JSON.stringify(user),
+      body: user,
       headers: {
         'Access-Control-Allow-Origin': '*'
       }
