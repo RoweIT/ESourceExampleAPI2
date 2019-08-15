@@ -1,51 +1,88 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  api-gateway-test
+Description: 'api-gateway-test
 
   Sample SAM Template for api-gateway-test
-  
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+
+  '
 Globals:
-  Function:
-    Timeout: 3
+  Api:
+    OpenApiVersion: '3.0.1'
 
 Parameters:
-  DomainName:
-    Type: String
-    Default: api2.esource.roweitdev.co.uk
-    Description: Domain name to call the api from.
-  HostedZoneName:
-    Type: String
-    Default: esource.roweitdev.co.uk.
-    Description: Name of the desired hosted zone.
   ApiBasePath:
-    Type: String
     Default: v2
     Description: Base path of the api. 'v1' - example.co.uk/v1/endpoints
+    Type: String
+  DomainName:
+    Default: api.esource.roweitdev.co.uk
+    Description: Domain name to call the api from.
+    Type: String
+  HostedZoneName:
+    Default: esource.roweitdev.co.uk.
+    Description: Name of the desired hosted zone.
+    Type: String
   SSMCertificateArn:
     Description: 'Arn of the esource certificate created via terraform.'
     Type: AWS::SSM::Parameter::Value<String>
     Default: '/esource/config/ESOURCE_api_certificate_arn'
 
 Resources:
-  GetUsersFunction:
-    Type: AWS::Serverless::Function
+  ApiGatewayAuthorizerRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - apigateway.amazonaws.com
+        Version: '2012-10-17'
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - lambda:InvokeAsync
+            - lambda:InvokeFunction
+            Effect: Allow
+            Resource:
+              Fn::Sub: ${CustomAuthorizerFunction.Arn}
+          Version: '2012-10-17'
+        PolicyName: InvokeAuthorizerFunction
+    Type: AWS::IAM::Role
+
+  CustomAuthorizerFunction:
     Properties:
       CodeUri: src/
-      Handler: app.lambdaHandler
+      Handler: authorizer.handler
+      Role:
+        Fn::Sub: ${CustomAuthorizerFunctionRole.Arn}
       Runtime: nodejs10.x
-  
-  ServerlessRestAPI:
-    Type: AWS::Serverless::Api
+    Type: AWS::Serverless::Function
+
+  CustomAuthorizerFunctionRole:
+    Type: AWS::IAM::Role
     Properties:
-      StageName: dev
-      EndpointConfiguration: REGIONAL
-      DefinitionBody:
-        'Fn::Transform':
-          Name: 'AWS::Include'
-          Parameters:
-            Location: './swagger.yaml'
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "lambda.amazonaws.com"
+            Action: 
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  GetUsersFunction:
+    Properties:
+      CodeUri: src/
+      Handler: app.getAllUsers
+      Runtime: nodejs10.x
+    Type: AWS::Serverless::Function
 
   GetUsersLambdaPermission:
     Type: AWS::Lambda::Permission
@@ -57,6 +94,51 @@ Resources:
       FunctionName: !Ref GetUsersFunction
       Principal: apigateway.amazonaws.com
 
+  GetUserFunction:
+    Properties:
+      CodeUri: src/
+      Handler: app.getUser
+      Runtime: nodejs10.x
+    Type: AWS::Serverless::Function
+
+  GetUserLambdaPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+    - ServerlessRestAPI
+    - GetUserFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref GetUserFunction
+      Principal: apigateway.amazonaws.com
+
+  CreateUserFunction:
+    Properties:
+      CodeUri: src/
+      Handler: app.createUser
+      Runtime: nodejs10.x
+    Type: AWS::Serverless::Function
+
+GetUserLambdaPermission:
+  Type: AWS::Lambda::Permission
+  DependsOn:
+  - ServerlessRestAPI
+  - CreateUserFunction
+  Properties:
+    Action: lambda:InvokeFunction
+    FunctionName: !Ref CreateUserFunction
+    Principal: apigateway.amazonaws.com
+
+  ServerlessRestAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+      EndpointConfiguration: REGIONAL
+      DefinitionBody:
+        'Fn::Transform':
+          Name: 'AWS::Include'
+          Parameters:
+            Location: './openapi3.yaml'
+    
   GatewayDomain:
     Type: AWS::ApiGateway::DomainName
     Properties:
@@ -84,3 +166,4 @@ Resources:
         AliasTarget:
           DNSName: !GetAtt GatewayDomain.RegionalDomainName
           HostedZoneId: !GetAtt GatewayDomain.RegionalHostedZoneId
+        

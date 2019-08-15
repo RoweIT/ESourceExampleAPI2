@@ -3,9 +3,14 @@ phases:
   install:
     runtime-versions:
       nodejs: 10
+  build:
     commands:
-      - npm i
-      - aws cloudformation package --template-file template.yaml --s3-bucket ccs.lambda-cd-bucket-test --output-template-file deploy.yaml
+      - cd src
+      - npm install
+      - cd ..
+  post_build:
+    commands:
+      - aws cloudformation package --template-file template.yaml --s3-bucket $S3_BUCKET --output-template-file deploy.yaml
 artifacts:
   type: zip
   files:

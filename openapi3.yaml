@@ -1,0 +1,89 @@
+openapi: "3.0.1"
+info:
+  title: "ESOURCE Sample Response API #3 (Authorized)"
+  version: "0.1"
+paths:
+  /users:
+    get:
+      responses:
+        200:
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArrayOfUser"
+      security:
+      - CustomAuthorizer: []
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetUsersFunction.Arn}/invocations
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        type: "aws_proxy"
+    post:
+      consumes:
+      - "application/json"
+      responses:
+        201:
+          description: "User created"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+      security:
+      - CustomAuthorizer: []
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateUserFunction.Arn}/invocations
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        type: "aws_proxy"
+  /users/{id}:
+    get:
+      parameters:
+      - name: "id"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "200 response"
+          content: {}
+      security:
+      - CustomAuthorizer: []
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetUserFunction.Arn}/invocations
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        type: "aws_proxy"
+components:
+  schemas:
+    User:
+      type: "object"
+      properties:
+        name:
+          type: "string"
+          description: "Name of the user"
+        id:
+          type: "number"
+          description: "ID of the user"
+      description: "A generic user"
+    ArrayOfUser:
+      type: "array"
+      items:
+        $ref: "#/components/schemas/User"
+  securitySchemes:
+    CustomAuthorizer:
+      type: "apiKey"
+      name: "Authorization"
+      in: "header"
+      x-amazon-apigateway-authtype: "custom"
+      x-amazon-apigateway-authorizer:
+        authorizerUri: 
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CustomAuthorizerFunction.Arn}/invocations
+        authorizerCredentials: 
+          Fn::Sub: ${ApiGatewayAuthorizerRole.Arn}
+        authorizerResultTtlInSeconds: 60
+        type: "token"
