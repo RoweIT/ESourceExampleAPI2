@@ -111,6 +111,23 @@ Resources:
       FunctionName: !Ref GetUserFunction
       Principal: apigateway.amazonaws.com
 
+  CreateUserFunction:
+    Properties:
+      CodeUri: src/
+      Handler: app.getUser
+      Runtime: nodejs10.x
+    Type: AWS::Serverless::Function
+
+  CreateUserLambdaPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+    - ServerlessRestAPI
+    - CreateUserFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref CreateUserFunction
+      Principal: apigateway.amazonaws.com
+
   ServerlessRestAPI:
     Type: AWS::Serverless::Api
     Properties:
