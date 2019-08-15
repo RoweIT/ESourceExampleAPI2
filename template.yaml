@@ -118,15 +118,15 @@ Resources:
       Runtime: nodejs10.x
     Type: AWS::Serverless::Function
 
-GetUserLambdaPermission:
-  Type: AWS::Lambda::Permission
-  DependsOn:
-  - ServerlessRestAPI
-  - CreateUserFunction
-  Properties:
-    Action: lambda:InvokeFunction
-    FunctionName: !Ref CreateUserFunction
-    Principal: apigateway.amazonaws.com
+  CreateUserLambdaPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+    - ServerlessRestAPI
+    - CreateUserFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref CreateUserFunction
+      Principal: apigateway.amazonaws.com
 
   ServerlessRestAPI:
     Type: AWS::Serverless::Api
