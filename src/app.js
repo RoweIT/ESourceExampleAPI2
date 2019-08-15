@@ -100,7 +100,8 @@ exports.getUser = async (event, context) => {
 exports.createUser = async (event, context) => {
   try {
     console.log('Received event:', JSON.stringify(event, null, 2));
-    let user = JSON.stringify(event);
+    let user = event;
+    users.push(user);
 
     return {
       statusCode: 201,
