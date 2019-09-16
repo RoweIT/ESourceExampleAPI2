@@ -140,9 +140,10 @@ Resources:
             Location: './openapi3.yaml'
 
   APIBasePathMapping:
+    DependsOn: ServerlessRestAPIdevStage #Required - Needs to wait for SAM to create stage before mapping {LOGICAL_API_NAME}{Stage}Stage
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
-      DomainName: !Ref DomainName
+      DomainName: !Ref GatewayDomain
       RestApiId: !Ref ServerlessRestAPI
       Stage: dev
       BasePath: !Ref ApiBasePath
