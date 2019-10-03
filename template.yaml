@@ -15,7 +15,7 @@ Parameters:
     Description: Minor version of the API
     Type: String
   MINOR_VERSION:
-    Default: 1
+    Default: 2
     Description: Minor version of the API
     Type: String
 
