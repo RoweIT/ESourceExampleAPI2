@@ -10,11 +10,11 @@ Globals:
     OpenApiVersion: '3.0.1'
 
 Parameters:
-  MAJOR_VERSION:
+  MajorVersion:
     Default: "1"
     Description: Minor version of the API
     Type: String
-  MINOR_VERSION:
+  MinorVersion:
     Default: "1"
     Description: Minor version of the API
     Type: String
@@ -123,7 +123,7 @@ Resources:
   ServerlessRestAPI:
     Type: AWS::Serverless::Api
     Properties:
-      StageName: !Ref MINOR_VERSION
+      StageName: default
       EndpointConfiguration: REGIONAL
       DefinitionBody:
         'Fn::Transform':
@@ -132,8 +132,8 @@ Resources:
             Location: './openapi3.yaml'
       Tags:
         Application: ESOURCE_API
-        MAJOR_VERSION: !Ref MAJOR_VERSION
-        MINOR_VERSION: !Ref MINOR_VERSION
+        MAJOR_VERSION: !Ref MajorVersion
+        MINOR_VERSION: !Ref MinorVersion
 
   # APIBasePathMapping:
   #   DependsOn: ServerlessRestAPIdevStage #Required - Needs to wait for SAM to create stage before mapping {LOGICAL_API_NAME}{Stage}Stage
