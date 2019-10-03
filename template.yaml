@@ -132,8 +132,8 @@ Resources:
             Location: './openapi3.yaml'
       Tags:
           Application: ESOURCE_API
-          MajorVersion: !Ref MajorVersion
-          MinorVersion: !Ref MinorVersion
+          MAJOR_VERSION: !Ref MajorVersion
+          MINOR_VERSION: !Ref MinorVersion
 
   # APIBasePathMapping:
   #   DependsOn: ServerlessRestAPIdevStage #Required - Needs to wait for SAM to create stage before mapping {LOGICAL_API_NAME}{Stage}Stage
