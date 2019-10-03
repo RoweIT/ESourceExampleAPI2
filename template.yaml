@@ -130,6 +130,10 @@ Resources:
           Name: 'AWS::Include'
           Parameters:
             Location: './openapi3.yaml'
+      Tags:
+          Application: ESOURCE_API
+          MAJOR_VERSION: !Ref MAJOR_VERSION
+          MINOR_VERSION: !Ref MINOR_VERSION
 
   # APIBasePathMapping:
   #   DependsOn: ServerlessRestAPIdevStage #Required - Needs to wait for SAM to create stage before mapping {LOGICAL_API_NAME}{Stage}Stage
