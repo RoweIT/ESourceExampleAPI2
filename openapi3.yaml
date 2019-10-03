@@ -1,6 +1,6 @@
 openapi: "3.0.1"
 info:
-  title: "ESOURCE Sample Response API #2 (Authorized)"
+  title: "ESOURCE Sample Response API #2.1"
   version: "0.1"
 paths:
   /users:
