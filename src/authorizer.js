@@ -15,17 +15,20 @@ const AWS = require('aws-sdk');
  */
 exports.handler = async (event, context, callback) => {
   try {
-    console.log(`Event: ${event}`);
+    console.log(`Event: ${JSON.stringify(event)}`);
+    console.log(`ENV: ${JSON.stringify(process.env)}`);
 
-    const authHeader = event.headers.authorization;
+    const authHeader = event.authorizationToken;
     const { COGNITO_USER_POOL_ID, COGNITO_CLIENT_ID } = process.env;
 
     console.log(`Authorization header: ${authHeader}`);
 
     if (!authHeader) return callback('Unauthorized');
 
-    const encodedCreds = authHeader.split(' ')[1];
-    const plainCreds = new Buffer(encodedCreds, 'base64').toString().split(':');
+    const plainCreds = Buffer.from(
+      authHeader.split(' ')[1],
+      'base64'
+    ).toString();
 
     const authData = {
       Username: plainCreds[0],
@@ -50,32 +53,26 @@ exports.handler = async (event, context, callback) => {
 
     const cognitoUser = new AWS.AmazonCognitoIdentity.CognitoUser(userData);
 
-    return cognitoUser.authenticateUser(authDetails, {
+    cognitoUser.authenticateUser(authDetails, {
       onSuccess: () => {
-        return generatePolicy(1, 'Allow', event.methodArn);
+        return generatePolicy(plainCreds[0], 'Allow', event.methodArn);
       },
       onFailure: () => {
-        return generatePolicy(1, 'Deny', event.methodArn);
+        return generatePolicy(plainCreds[0], 'Deny', event.methodArn);
       }
     });
 
     // if (verified) return generatePolicy(1, 'Allow', event.methodArn);
     // else return generatePolicy(1, 'Deny', event.methodArn);
   } catch (err) {
-    const response = {
-      body: JSON.stringify({
-        error: err.message
-      })
-    };
-
-    callback(null, response);
+    callback(null, err);
   }
-
-  return response;
 };
 
 // Help function to generate an IAM policy
 const generatePolicy = async (principalId, effect, methodArn) => {
+  console.log('Generating Policy...');
+
   let authResponse = {};
 
   authResponse.principalId = principalId;
@@ -93,6 +90,8 @@ const generatePolicy = async (principalId, effect, methodArn) => {
 
     authResponse.policyDocument = policyDocument;
   }
+
+  console.log('POLICY: ', JSON.stringify(authResponse));
 
   return authResponse;
 };
