@@ -15,11 +15,12 @@ const AWS = require('aws-sdk');
  */
 exports.handler = async (event, context, callback) => {
   try {
+    console.log(`Event: ${event}`);
+
     const authHeader = event.headers.authorization;
     const { COGNITO_USER_POOL_ID, COGNITO_CLIENT_ID } = process.env;
 
     console.log(`Authorization header: ${authHeader}`);
-    console.log(`Event: ${event}`);
 
     if (!authHeader) return callback('Unauthorized');
 
@@ -62,10 +63,6 @@ exports.handler = async (event, context, callback) => {
     // else return generatePolicy(1, 'Deny', event.methodArn);
   } catch (err) {
     const response = {
-      statusCode: 401,
-      headers: {
-        'Access-Control-Allow-Origin': '*'
-      },
       body: JSON.stringify({
         error: err.message
       })
