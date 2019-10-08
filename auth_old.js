@@ -15,17 +15,15 @@ const AWS = require('aws-sdk');
  */
 exports.handler = async (event, context, callback) => {
   try {
-    const cognitoidentityserviceprovider = new AWS.CognitoIdentityServiceProvider(
-      {
-        region: 'eu-west-2'
-      }
-    );
+    const identity = new AWS.CognitoIdentityServiceProvider({
+      region: 'eu-west-2'
+    });
 
     console.log(`Event: ${JSON.stringify(event)}`);
-    console.log(`Env: ${JSON.stringify(process.env)}`);
+    console.log(`ENV: ${JSON.stringify(process.env)}`);
 
     const authHeader = event.authorizationToken;
-    const { COGNITO_CLIENT_ID } = process.env;
+    const { COGNITO_USER_POOL_ID, COGNITO_CLIENT_ID } = process.env;
 
     console.log(`Authorization header: ${authHeader}`);
 
@@ -36,29 +34,50 @@ exports.handler = async (event, context, callback) => {
       'base64'
     ).toString();
 
-    console.log(generatePolicy(plainCreds[0], 'Allow', event.methodArn));
-
-    const params = {
-      AuthFlow: 'USER_PASSWORD_AUTH',
-      ClientId: COGNITO_CLIENT_ID,
-      AuthParameters: {
-        USERNAME: plainCreds[0],
-        PASSWORD: plainCreds[1]
-      }
+    const authData = {
+      Username: plainCreds[0],
+      Password: plainCreds[1]
     };
 
-    let auth = await cognitoidentityserviceprovider
-      .initiateAuth(params, () => {})
-      .promise();
+    const authDetails = identity.AuthenticationDetails(authData);
 
-    console.log(auth);
+    const poolData = {
+      UserPoolId: COGNITO_USER_POOL_ID,
+      ClientId: COGNITO_CLIENT_ID
+    };
+
+    const userPool = identity.CognitoUserPool(poolData);
+
+    const userData = {
+      Username: plainCreds[0],
+      Pool: userPool
+    };
+
+    const cognitoUser = identity.CognitoUser(userData);
+
+    console.log(cognitoUser);
+    console.log(generatePolicy(plainCreds[0], 'Allow', event.methodArn););
+
+    return cognitoUser.authenticateUser(authDetails, {
+      onSuccess: () => {
+        return generatePolicy(plainCreds[0], 'Allow', event.methodArn);
+      },
+      onFailure: () => {
+        return generatePolicy(plainCreds[0], 'Deny', event.methodArn);
+      }
+    });
+
+    // if (verified) return generatePolicy(1, 'Allow', event.methodArn);
+    // else return generatePolicy(1, 'Deny', event.methodArn);
   } catch (err) {
     callback(null, err);
   }
 };
 
 // Help function to generate an IAM policy
-const generatePolicy = (principalId, effect, methodArn) => {
+const generatePolicy = async (principalId, effect, methodArn) => {
+  console.log('Generating Policy...');
+
   let authResponse = {};
 
   authResponse.principalId = principalId;
