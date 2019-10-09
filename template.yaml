@@ -18,6 +18,14 @@ Parameters:
     Default: "1"
     Description: Minor version of the API
     Type: String
+  CognitoUserPoolId:
+    Description: 'User Pool Id for the Cognito User Pool used with the API.'
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: '/esource/cognito/COGNITO_USER_POOL_ID'
+  CognitoClientId:
+    Description: 'Client Id for the Cognito User Pool used with the API.'
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: '/esource/cognito/COGNITO_CLIENT_ID'
 
 Resources:
   ApiGatewayAuthorizerRole:
@@ -50,7 +58,11 @@ Resources:
       Handler: authorizer.handler
       Role:
         Fn::Sub: ${CustomAuthorizerFunctionRole.Arn}
-      Runtime: nodejs10.x
+      Runtime: nodejs8.10
+      Environment:
+        Variables:
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPoolId
+          COGNITO_CLIENT_ID: !Ref CognitoClientId
     Type: AWS::Serverless::Function
 
   CustomAuthorizerFunctionRole:
@@ -73,7 +85,7 @@ Resources:
     Properties:
       CodeUri: src/
       Handler: app.getAllUsers
-      Runtime: nodejs10.x
+      Runtime: nodejs8.10
     Type: AWS::Serverless::Function
 
   GetUsersLambdaPermission:
@@ -90,7 +102,7 @@ Resources:
     Properties:
       CodeUri: src/
       Handler: app.getUser
-      Runtime: nodejs10.x
+      Runtime: nodejs8.10
     Type: AWS::Serverless::Function
 
   GetUserLambdaPermission:
@@ -107,7 +119,7 @@ Resources:
     Properties:
       CodeUri: src/
       Handler: app.createUser
-      Runtime: nodejs10.x
+      Runtime: nodejs8.10
     Type: AWS::Serverless::Function
 
   CreateUserLambdaPermission:
@@ -134,12 +146,3 @@ Resources:
         Application: ESOURCE_API
         MAJOR_VERSION: !Ref MajorVersion
         MINOR_VERSION: !Ref MinorVersion
-
-  # APIBasePathMapping:
-  #   DependsOn: ServerlessRestAPIdevStage #Required - Needs to wait for SAM to create stage before mapping {LOGICAL_API_NAME}{Stage}Stage
-  #   Type: AWS::ApiGateway::BasePathMapping
-  #   Properties:
-  #     DomainName: !Ref DomainName
-  #     RestApiId: !Ref ServerlessRestAPI
-  #     Stage: dev
-  #     BasePath: !Ref ApiBasePath
