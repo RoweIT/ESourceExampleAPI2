@@ -31,12 +31,9 @@ exports.handler = async (event, context, callback) => {
 
     if (!authHeader) return callback('Unauthorized');
 
-    const plainCreds = Buffer.from(
-      authHeader.split(' ')[1],
-      'base64'
-    ).toString();
-
-    console.log(generatePolicy(plainCreds[0], 'Allow', event.methodArn));
+    const plainCreds = Buffer.from(authHeader.split(' ')[1], 'base64')
+      .toString()
+      .split(':');
 
     const params = {
       AuthFlow: 'USER_PASSWORD_AUTH',
@@ -47,18 +44,24 @@ exports.handler = async (event, context, callback) => {
       }
     };
 
-    let auth = await cognitoidentityserviceprovider
+    return cognitoidentityserviceprovider
       .initiateAuth(params, () => {})
-      .promise();
-
-    console.log(auth);
+      .promise()
+      .then(res => {
+        console.log(JSON.stringify(res));
+        return generatePolicy(plainCreds[0], 'Allow', event.methodArn);
+      })
+      .catch(err => {
+        console.error(JSON.stringify(err));
+        return generatePolicy(plainCreds[0], 'Deny', event.methodArn);
+      });
   } catch (err) {
-    callback(null, err);
+    callback(Error(err));
   }
 };
 
 // Help function to generate an IAM policy
-const generatePolicy = (principalId, effect, methodArn) => {
+function generatePolicy(principalId, effect, methodArn) {
   let authResponse = {};
 
   authResponse.principalId = principalId;
@@ -77,7 +80,5 @@ const generatePolicy = (principalId, effect, methodArn) => {
     authResponse.policyDocument = policyDocument;
   }
 
-  console.log('POLICY: ', JSON.stringify(authResponse));
-
   return authResponse;
-};
+}
