@@ -30,6 +30,11 @@ let users = [
     admin: false
   }
 ];
+
+let responseBody = {
+  apiVersion: 1.2
+};
+
 /**
  *
  * Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
@@ -42,10 +47,6 @@ let users = [
  * @returns {Object} object - API Gateway Lambda Proxy Output Format
  *
  */
-
-let responseBody = {
-  apiVersion: 2
-};
 
 exports.getAllUsers = async (event, context) => {
   try {
