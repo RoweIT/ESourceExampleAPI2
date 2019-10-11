@@ -7,7 +7,7 @@ Description: 'api-gateway-test
   '
 Globals:
   Api:
-    OpenApiVersion: '9'
+    OpenApiVersion: '3.0.1'
 
 Parameters:
   MajorVersion:
