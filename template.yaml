@@ -85,7 +85,7 @@ Resources:
     Properties:
       CodeUri: src/
       Handler: app.getAllUsers
-      Runtime: nodejs8.10
+      Runtime: nodejs10.x
     Type: AWS::Serverless::Function
 
   GetUsersLambdaPermission:
